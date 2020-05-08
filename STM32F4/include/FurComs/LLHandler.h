@@ -15,6 +15,8 @@
 #include <stdint.h>
 #include <array>
 
+#define FURCOM_RX_BUFFER_NUM 4
+
 namespace TEF {
 namespace FurComs {
 
@@ -46,7 +48,6 @@ struct arbitration_package_t {
 
 struct rx_buffer_t {
 	std::array<char, 256> raw_data;
-	char * data_start;
 	char * data_end;
 
 	bool data_available;
@@ -72,6 +73,8 @@ private:
 	size_t tx_raw_length;
 
 	int rx_buffer_num;
+	//! Pre-decoded data received from the bus
+	rx_buffer_t rx_buffers[FURCOM_RX_BUFFER_NUM];
 
 	uint32_t    last_active_tick;
 
@@ -88,8 +91,6 @@ private:
 	void tx_single();
 
 public:
-	//! Pre-decoded data received from the bus
-	rx_buffer_t rx_buffers[2];
 
 	LL_Handler(USART_TypeDef *uart_handle);
 

@@ -37,7 +37,8 @@ LL_Handler::LL_Handler(USART_TypeDef *handle) :
 
 	for(int i=0; i<2; i++) {
 		rx_buffers[i].data_end = rx_buffers[i].raw_data.data();
-		rx_buffers[i].data_start = nullptr;
+	}
+}
 	}
 }
 
@@ -85,6 +86,8 @@ void LL_Handler::handle_stop_char() {
 		state = IDLE;
 
 		rx_buffers[rx_buffer_num].data_available = true;
+
+		rx_buffer_num = (rx_buffer_num + 1) & 0b11;
 
 		if(tx_data_packet_count)
 			uart_handle->TDR = 0;
@@ -165,9 +168,7 @@ void LL_Handler::rx_single(uint8_t c) {
 		if(rx_arbitration_counter++ == 7) {
 			state = RECEIVING;
 
-			rx_buffer_num ^= 1;
 			rx_buffers[rx_buffer_num].data_end = rx_buffers[rx_buffer_num].raw_data.data();
-			rx_buffers[rx_buffer_num].data_start = 0;
 			rx_buffers[rx_buffer_num].data_available = false;
 		}
 		break;
@@ -175,16 +176,14 @@ void LL_Handler::rx_single(uint8_t c) {
 	case RECEIVING: {
 		rx_buffer_t &buffer = rx_buffers[rx_buffer_num];
 
+		if(buffer.data_end > buffer.raw_data.end())
+			return;
+
 		if(had_received_escape) {
 			if(c == FURCOM_ESC_ESC)
 				*(buffer.data_end++) = FURCOM_ESCAPE;
 			else if(c == FURCOM_ESC_END) {
 				*(buffer.data_end++) = FURCOM_END;
-				// First 0x00 will mark the end of the topic,
-				// and the start of the data
-				if(buffer.data_start == 0) {
-					buffer.data_start = buffer.data_end;
-				}
 			}
 
 			had_received_escape = false;
