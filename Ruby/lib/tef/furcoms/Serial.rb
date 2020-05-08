@@ -1,0 +1,52 @@
+
+require_relative 'Base.rb'
+
+require 'serialport'
+require 'xasin_logger'
+
+module TEF
+	module FurComs
+		class Serial < Base
+			include XasLogger::Mix
+
+			def initialize(port)
+				@port = SerialPort.new(port);
+
+				@port.baud = 115200;
+
+				init_x_log("FurComs #{port}")
+
+				x_logi("Ready!");
+			end
+
+			def send_message(topic, message, priority: 0, chip_id: 0)
+				if (topic.length + message.length) > 250
+					raise ArgumentError, "Message packet length exceeded!"
+				end
+
+				x_logd("Sending '#{topic}': '#{message}'")
+
+				data_str = "#{topic}\0#{message}"
+				escaped_str = data_str.bytes.map do |b|
+					if b == 0
+						[0xDB, 0xDC]
+					elsif b == 0xDB
+						[0xDB, 0xDD]
+					else
+						b
+					end
+				end.flatten
+
+				priority = ([[-60, priority].max, 60].min + 64) * 2 + 1;
+				chip_id = 0x1 | 0x100 | ((chip_id & 0xEF) << 9) | ((chip_id >> 6) & 0xEF);
+
+				out_data = [0x00, priority, chip_id, 0xFF, 0xFE, 0xFF, 0xFF, 0xFF]
+				out_data += escaped_str + [0]
+
+				@port.write(out_data.pack("C2S<C*"))
+
+				@port.flush
+			end
+		end
+	end
+end

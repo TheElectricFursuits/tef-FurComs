@@ -1,0 +1,79 @@
+
+Layout/Tab:
+   Enabled: false
+
+Layout/LeadingEmptyLines:
+   Enabled: false
+
+Layout/IndentationWidth:
+   Width: 1
+Layout/HashAlignment:
+   Enabled: false
+Layout/HeredocIndentation:
+   Enabled: false
+
+Style/RescueStandardError:
+   Exclude:
+      - ./lib/locaci/step.rb
+      - ./lib/locaci/specgen.rb
+Style/GlobalVars:
+   Exclude:
+      - ./tests/*.rb
+
+Style/Semicolon:
+   Enabled: false
+Style/SymbolArray:
+   Enabled: false
+Style/MethodCallWithoutArgsParentheses:
+   Enabled: false
+Style/DefWithParentheses:
+   Enabled: false
+Style/RegexpLiteral:
+   Enabled: false
+Style/ConditionalAssignment:
+   Enabled: false
+Style/MutableConstant:
+   Enabled: false
+Style/AccessModifierDeclarations:
+   Enabled: false
+Style/FormatStringToken:
+   Enabled: false
+Style/FormatString:
+   Enabled: false
+Style/BlockComments:
+   Enabled: false
+Style/BracesAroundHashParameters:
+   Enabled: false
+Style/IfUnlessModifier:
+   Enabled: false
+
+Metrics/MethodLength:
+   Max: 25
+   Enabled: false
+Metrics/AbcSize:
+   Max: 25
+   Exclude:
+      - ./tests/*.rb
+      - ./lib/locaci/result_collection.rb
+      - ./lib/locaci/testresult.rb
+      - ./lib/locaci/command_funcs/list_blocks.rb
+
+Metrics/LineLength:
+   Exclude:
+      - ./lib/locaci/command_funcs/list_blocks.rb
+
+Metrics/CyclomaticComplexity:
+   Max: 8
+Metrics/PerceivedComplexity:
+   Max: 8
+Metrics/ClassLength:
+   Max: 100
+   Enabled: false
+
+Naming/VariableName:
+   EnforcedStyle: snake_case
+Naming/PredicateName:
+   Enabled: false
+
+Style/FrozenStringLiteralComment:
+   Enabled: false
