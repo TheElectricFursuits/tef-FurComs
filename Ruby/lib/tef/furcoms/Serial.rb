@@ -10,13 +10,67 @@ module TEF
 			include XasLogger::Mix
 
 			def initialize(port)
-				@port = SerialPort.new(port);
+				super();
 
+				@port = SerialPort.new(port);
 				@port.baud = 115200;
 
-				init_x_log("FurComs #{port}")
+				start_thread();
 
+				init_x_log("FurComs #{port}")
 				x_logi("Ready!");
+			end
+
+			private def decode_data_string(data)
+				return if(data.length() < 9)
+
+				payload = data[8..-1]
+
+				topic, _sep, payload = payload.partition("\0")
+
+				x_logd("Data received on #{topic}: #{payload}")
+
+				@message_procs.each do |callback|
+					if filter = callback[:topic_filter]
+						if filter.is_a? String
+							next unless topic == filter
+						elsif filter.is_a? RegExp
+							next unless filter.match(topic)
+						end
+					end
+
+					callback[:block].call(payload, topic)
+				end
+			end
+
+			private def start_thread()
+				@rx_thread = Thread.new() do
+					had_esc = false;
+					rx_buffer = '';
+
+					loop do
+						c = @port.getbyte
+
+						if c == 0
+							decode_data_string rx_buffer
+							rx_buffer = ''
+						elsif had_esc
+							case c
+							when 0xDC
+								rx_buffer += "\0"
+							when 0xDD
+								rx_buffer += "\xDB"
+							end
+							had_esc = false
+						elsif c == 0xDB
+							had_esc = true
+						else
+							rx_buffer += c.chr
+						end
+					end
+				end
+
+				@rx_thread.abort_on_exception = true
 			end
 
 			def send_message(topic, message, priority: 0, chip_id: 0)

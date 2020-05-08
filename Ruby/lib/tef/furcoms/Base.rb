@@ -19,6 +19,10 @@ module TEF
 			end
 
 			def send_message(topic, message, priority: 0, chip_id: 0) end
+
+			def on_message(topic_filter = nil, &block)
+				@message_procs << { topic: topic_filter, block: block };
+			end
 		end
 	end
 end
