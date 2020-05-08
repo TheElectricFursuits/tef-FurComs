@@ -81,6 +81,7 @@ private:
 	bool had_received_escape;
 
 	osMutexId_t  write_mutex;
+	osThreadId_t handler_thread;
 
 	int get_missmatch_pos(uint8_t a, uint8_t b);
 
@@ -91,8 +92,11 @@ private:
 	void tx_single();
 
 public:
+	static void run_handler_thread(void *args);
 
 	LL_Handler(USART_TypeDef *uart_handle);
+
+	void _run_thread();
 
 	void init();
 
@@ -106,6 +110,8 @@ public:
 	void start_packet(const char *topic);
 	void add_packet_data(const void *data_ptr, size_t length);
 	void close_packet();
+
+	void (*on_rx)(const char *, const void *, size_t);
 };
 
 } /* namespace FurComs */

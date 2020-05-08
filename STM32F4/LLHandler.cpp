@@ -39,6 +39,33 @@ LL_Handler::LL_Handler(USART_TypeDef *handle) :
 		rx_buffers[i].data_end = rx_buffers[i].raw_data.data();
 	}
 }
+
+void LL_Handler::_run_thread() {
+	int buf_num = 0;
+
+	while(1) {
+		osThreadFlagsWait(0b1, 0, 100);
+
+		if(on_rx != nullptr) {
+			while(rx_buffers[buf_num].data_available) {
+				char * topic_ptr = rx_buffers[buf_num].raw_data.data();
+				char * data_ptr = strchr(topic_ptr, 0) + 1;
+				size_t data_length = rx_buffers[buf_num].data_end - data_ptr;
+
+				*rx_buffers[buf_num].data_end = 0;
+				on_rx(topic_ptr, data_ptr, data_length);
+
+				rx_buffers[buf_num].data_available = false;
+
+				buf_num = (buf_num + 1) & 0b11;
+			}
+		}
+
+		if(is_idle() && tx_data_packet_count > 0) {
+			uart_handle->TDR = 0;
+			state = PARTICIPATING_ARBITRATION;
+			last_active_tick = osKernelGetTickCount();
+		}
 	}
 }
 
@@ -47,6 +74,16 @@ void LL_Handler::init() {
 	last_active_tick = osKernelGetTickCount();
 
 	uart_handle->CR1 |= USART_CR1_RXNEIE;
+
+	osThreadAttr_t thread_attributes = {
+			"FurComs Handler",
+			0,
+			nullptr, 0,
+			nullptr, 1024,
+			osPriorityRealtime,
+			0, 0
+	};
+	handler_thread = osThreadNew(LL_Handler::run_handler_thread, this, &thread_attributes);
 }
 
 void LL_Handler::handle_isr() {
@@ -86,6 +123,7 @@ void LL_Handler::handle_stop_char() {
 		state = IDLE;
 
 		rx_buffers[rx_buffer_num].data_available = true;
+		osThreadFlagsSet(handler_thread, 0b1);
 
 		rx_buffer_num = (rx_buffer_num + 1) & 0b11;
 
