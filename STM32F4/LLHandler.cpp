@@ -14,6 +14,10 @@ int TRACE_com_state = 0;
 namespace TEF {
 namespace FurComs {
 
+void LL_Handler::run_handler_thread(void *args) {
+	reinterpret_cast<LL_Handler*>(args)->_run_thread();
+}
+
 LL_Handler::LL_Handler(USART_TypeDef *handle) :
 		uart_handle(handle),
 		state(IDLE),
@@ -22,7 +26,8 @@ LL_Handler::LL_Handler(USART_TypeDef *handle) :
 		tx_data_head(0), tx_data_tail(0), tx_data(),
 		tx_data_packet_count(0),
 		tx_raw_ptr(nullptr), tx_raw_length(0),
-		rx_buffer_num(0), had_received_escape(false) {
+		rx_buffer_num(0), had_received_escape(false),
+		write_mutex(nullptr), handler_thread(nullptr) {
 	state = IDLE;
 
 	tx_arbitration._latency_a = 0xFF;
@@ -37,6 +42,9 @@ LL_Handler::LL_Handler(USART_TypeDef *handle) :
 }
 
 void LL_Handler::init() {
+	write_mutex = osMutexNew(nullptr);
+	last_active_tick = osKernelGetTickCount();
+
 	uart_handle->CR1 |= USART_CR1_RXNEIE;
 }
 
@@ -69,6 +77,9 @@ void LL_Handler::raw_start_tx(const void *data_ptr, size_t length) {
 }
 
 void LL_Handler::handle_stop_char() {
+	if(last_active_tick + 5 < osKernelGetTickCount())
+		state = IDLE;
+
 	switch(state) {
 	case RECEIVING:
 		state = IDLE;
@@ -106,6 +117,8 @@ void LL_Handler::handle_stop_char() {
 }
 
 void LL_Handler::rx_single(uint8_t c) {
+	last_active_tick = osKernelGetTickCount();
+
 	if(c == 0x00) {
 		handle_stop_char();
 		return;
@@ -225,7 +238,22 @@ void LL_Handler::set_priority(int8_t priority) {
 		tx_arbitration.priority = 1 | (priority + 64) << 1;
 }
 
-void LL_Handler::add_tx_data(const void *data_ptr, size_t length) {
+bool LL_Handler::is_idle() {
+	if(state == IDLE)
+		return true;
+	if(last_active_tick + 10 < osKernelGetTickCount())
+		return true;
+
+	return false;
+}
+
+void LL_Handler::start_packet(const char *topic) {
+	osMutexAcquire(write_mutex, 0);
+
+	add_packet_data(topic, strlen(topic)+1);
+}
+
+void LL_Handler::add_packet_data(const void *data_ptr, size_t length) {
 	const uint8_t *cast_ptr = reinterpret_cast<const uint8_t *>(data_ptr);
 	while(length) {
 		if(*cast_ptr == FURCOM_END) {
@@ -248,7 +276,7 @@ void LL_Handler::add_tx_data(const void *data_ptr, size_t length) {
 	}
 }
 
-void LL_Handler::start_tx() {
+void LL_Handler::close_packet() {
 	// Add mandatory end character
 	tx_data[(tx_data_head++)] = 0x00;
 	tx_data_head &= 0x1FF;
@@ -256,8 +284,13 @@ void LL_Handler::start_tx() {
 	tx_data_packet_count++;
 
 	// Only if we are idle can we start sending!!
-	if(state == IDLE && (uart_handle->ISR & USART_ISR_IDLE))
+	if(is_idle()) {
 		uart_handle->TDR = 0;
+		state = PARTICIPATING_ARBITRATION;
+		last_active_tick = osKernelGetTickCount();
+	}
+
+	osMutexRelease(write_mutex);
 }
 
 } /* namespace FurComs */

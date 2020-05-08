@@ -10,6 +10,8 @@
 
 #include "main.h"
 
+#include <cmsis_os.h>
+
 #include <stdint.h>
 #include <array>
 
@@ -71,7 +73,11 @@ private:
 
 	int rx_buffer_num;
 
+	uint32_t    last_active_tick;
+
 	bool had_received_escape;
+
+	osMutexId_t  write_mutex;
 
 	int get_missmatch_pos(uint8_t a, uint8_t b);
 
@@ -94,9 +100,11 @@ public:
 	void set_chip_id(uint16_t id);
 	void set_priority(int8_t prio);
 
-	bool can_accept_packet();
-	void add_tx_data(const void *data_ptr, size_t length);
-	void start_tx();
+	bool is_idle();
+
+	void start_packet(const char *topic);
+	void add_packet_data(const void *data_ptr, size_t length);
+	void close_packet();
 };
 
 } /* namespace FurComs */
