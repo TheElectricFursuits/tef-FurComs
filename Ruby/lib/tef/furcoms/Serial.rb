@@ -22,26 +22,6 @@ module TEF
 				x_logi("Ready!");
 			end
 
-			private def handout_data(topic, data)
-				x_logd("Data received on #{topic}: #{data}")
-
-				@message_procs.each do |callback|
-					begin
-						if filter = callback[:topic]
-							if filter.is_a? String
-								next unless topic == filter
-							elsif filter.is_a? RegExp
-								next unless filter.match(topic)
-							end
-						end
-
-						callback[:block].call(data, topic)
-					rescue => e
-						x_logf("Error in callback #{callback[:block]}: #{e}");
-					end
-				end
-			end
-
 			private def decode_data_string(data)
 				return if(data.length() < 9)
 				payload = data[8..-1]
