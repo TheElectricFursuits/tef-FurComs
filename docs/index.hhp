@@ -1,0 +1,53 @@
+[OPTIONS]
+Compatibility=1.1
+Full-text search=Yes
+Contents file=index.hhc
+Default Window=main
+Default topic=index.html
+Index file=index.hhk
+Language=0x409 English (United States)
+Title=FurComs C++ documentation
+
+[WINDOWS]
+main="FurComs C++ documentation","index.hhc","index.hhk","index.html","index.html",,,,,0x23520,,0x10387e,,,,,,,,0
+
+[FILES]
+LLHandler_8h_source.html
+LLHandler_8h.html
+todo.html
+namespaceTEF.html
+namespaceTEF_1_1FurComs.html
+structTEF_1_1FurComs_1_1arbitration__package__t.html
+structTEF_1_1FurComs_1_1arbitration__package__t-members.html
+classTEF_1_1FurComs_1_1LL__Handler.html
+classTEF_1_1FurComs_1_1LL__Handler-members.html
+structTEF_1_1FurComs_1_1rx__buffer__t.html
+structTEF_1_1FurComs_1_1rx__buffer__t-members.html
+dir_7bc6803706b101d079899d7af3ccca82.html
+dir_9c5e5afecff329259e1f5b185800d1f5.html
+dir_6324957c9bf219b2f575baa06e5d971c.html
+index.html
+pages.html
+namespaces.html
+namespacemembers.html
+namespacemembers_enum.html
+namespacemembers_eval.html
+annotated.html
+classes.html
+functions.html
+functions_func.html
+functions_vars.html
+files.html
+tab_a.png
+tab_b.png
+tab_h.png
+tab_s.png
+nav_h.png
+nav_f.png
+bc_s.png
+doxygen.png
+closed.png
+open.png
+bdwn.png
+sync_on.png
+sync_off.png
