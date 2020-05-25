@@ -183,8 +183,7 @@ void LL_Handler::rx_single(uint8_t c) {
 				raw_start_tx(tx_arbitration.collision_map, 4);
 			}
 		}
-		else if(rx_arbitration_counter < 4) {
-		}
+		else if(rx_arbitration_counter < 4) { }
 		else if(rx_arbitration_counter < 7) {
 			uint32_t arb_c = uint32_t(~c) << (8*(rx_arbitration_counter-4));
 			uint32_t arb_map = 0xFFFFFF >> (24 - arbitration_loss_position);
