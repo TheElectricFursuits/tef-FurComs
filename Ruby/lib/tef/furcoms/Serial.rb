@@ -6,10 +6,28 @@ require 'xasin_logger'
 
 module TEF
 	module FurComs
+
+		# USB-To-Serial FurComs Bridge.
+		#
+		# This class will handle connecting to a FurComs bus using a standard
+		# USB-To-UART adapter, such as an FTDI-Chip, in order to send and
+		# receive messages.
+		#
+		# @note This class provides limited FurComs compatibility. Arbitration
+		#  handling is not possible, which may cause frequent collisions in busy
+		#  bus conditions. It is recommended to use a STM32 processor
+		#  that provides translation between FurComs and the computer.
 		class Serial < Base
 			include XasLogger::Mix
 
-			def initialize(port)
+			# Initialize a Serial bridge class.
+			#
+			# This will open the given Serial port and begin reading/writing
+			# onto the FurComs bus.
+			# @note This class can not provide full arbitration handling. This may
+			#   cause issues in busy bus conditions!
+			# @todo Add graceful handling of controller disconnect/reconnect.
+			def initialize(port = '/dev/ttyACM0')
 				super();
 
 				@port = SerialPort.new(port);
@@ -40,11 +58,12 @@ module TEF
 					c = 0;
 
 					loop do
-						c = @port.getbyte
-						if c == 0
+						c = @port.getbyte # Blocks until byte is available on bus.
+
+						if c == 0 # 0x00 Indicates STOP
 							decode_data_string rx_buffer
 							rx_buffer = ''
-						elsif had_esc
+						elsif had_esc # ESC had been received, decode next byte.
 							case c
 							when 0xDC
 								rx_buffer += "\0"
@@ -52,9 +71,9 @@ module TEF
 								rx_buffer += "\xDB"
 							end
 							had_esc = false
-						elsif c == 0xDB
+						elsif c == 0xDB # SLIP ESC
 							had_esc = true
-						else
+						else # No special treatment needed, add byte.
 							rx_buffer += c.chr
 						end
 					end
@@ -75,6 +94,17 @@ module TEF
 				end.flatten
 			end
 
+			# @private
+			# Internal function to append/prepend the neccessary framing
+			# to be a FurComs message.
+			# This framing is:
+			# - 0x00 START
+			# - priority and chip_id fields
+			# - 0xFF latency
+			# - 24-bit arbitration collission map.
+			# - 0xFF latency
+			# - Modified SLIP-Encoded message data
+			# - 0x00 STOP
 			private def generate_furcom_message(priority, chip_id, data_str)
 				priority = ([[-60, priority].max, 60].min + 64) * 2 + 1;
 				chip_id = 0x1 | 0x100 | ((chip_id & 0xEF) << 9) | ((chip_id >> 6) & 0xEF);
@@ -85,6 +115,7 @@ module TEF
 				out_data
 			end
 
+			# (see Base#send_message)
 			def send_message(topic, message, priority: 0, chip_id: 0)
 				unless topic =~ /^[\w\s\/]*$/
 					raise ArgumentError, "Topic includes invalid characters!"
