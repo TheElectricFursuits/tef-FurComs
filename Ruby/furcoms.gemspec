@@ -1,9 +1,10 @@
 
 Gem::Specification.new do |s|
 	s.name        = 'tef-furcoms'
-	s.version     = '0.1.0'
+	s.version     = '0.1.1'
 	s.date        = '2020-05-19'
 	s.summary     = 'Ruby-Gem for TheElectricFursuit FurComs'
+	s.homepage    = 'https://github.com/TheElectricFursuits/tef-FurComs'
 	s.description = 'Communication interfaces for TEF FurComs-compatible lines'
 	s.authors     = %w[TheSystem Neira]
 	s.files       = [Dir.glob('{bin,lib}/**/*'), 'README.md'].flatten
