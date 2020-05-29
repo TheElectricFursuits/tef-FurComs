@@ -1,12 +1,11 @@
 
-require_relative 'Base.rb'
+require_relative 'base.rb'
 
 require 'serialport'
 require 'xasin_logger'
 
 module TEF
 	module FurComs
-
 		# USB-To-Serial FurComs Bridge.
 		#
 		# This class will handle connecting to a FurComs bus using a standard
@@ -27,21 +26,22 @@ module TEF
 			# @note This class can not provide full arbitration handling. This may
 			#   cause issues in busy bus conditions!
 			# @todo Add graceful handling of controller disconnect/reconnect.
-			def initialize(port = '/dev/ttyACM0')
+			def initialize(port = '/dev/ttyACM0', baudrate = 115_200)
 				super();
 
 				@port = SerialPort.new(port);
-				@port.baud = 115200;
+				@port.baud = baudrate;
 				@port.sync = true;
 
 				start_thread();
 
 				init_x_log("FurComs #{port}")
-				x_logi("Ready!");
+				x_logi('Ready!');
 			end
 
 			private def decode_data_string(data)
-				return if(data.length() < 9)
+				return if data.length() < 9
+
 				payload = data[8..-1]
 				topic, _sep, payload = payload.partition("\0")
 
@@ -60,7 +60,7 @@ module TEF
 					loop do
 						c = @port.getbyte # Blocks until byte is available on bus.
 
-						if c == 0 # 0x00 Indicates STOP
+						if c.zero? # 0x00 Indicates STOP
 							decode_data_string rx_buffer
 							rx_buffer = ''
 						elsif had_esc # ESC had been received, decode next byte.
@@ -84,7 +84,7 @@ module TEF
 
 			private def slip_encode_data(data_str)
 				data_str.bytes.map do |b|
-					if b == 0
+					if b.zero?
 						[0xDB, 0xDC]
 					elsif b == 0xDB
 						[0xDB, 0xDD]
@@ -118,10 +118,10 @@ module TEF
 			# (see Base#send_message)
 			def send_message(topic, message, priority: 0, chip_id: 0)
 				unless topic =~ /^[\w\s\/]*$/
-					raise ArgumentError, "Topic includes invalid characters!"
+					raise ArgumentError, 'Topic includes invalid characters!'
 				end
 				if (topic.length + message.length) > 250
-					raise ArgumentError, "Message packet length exceeded!"
+					raise ArgumentError, 'Message packet length exceeded!'
 				end
 
 				x_logd("Sending '#{topic}': '#{message}'")
@@ -129,7 +129,7 @@ module TEF
 				escaped_str = slip_encode_data "#{topic}\0#{message}"
 				out_data = generate_furcom_message priority, chip_id, escaped_str;
 
-				@port.write(out_data.pack("C2S<C*"))
+				@port.write(out_data.pack('C2S<C*'))
 
 				@port.flush
 			end

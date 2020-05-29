@@ -1,5 +1,5 @@
 
-require_relative 'Serial.rb'
+require_relative 'serial.rb'
 
 module TEF
 	module FurComs
@@ -17,8 +17,9 @@ module TEF
 			#
 			# This will open the given Serial port and begin reading/writing
 			# onto the FurComs bus.
-			# It will additionally subscribe to the MQTT 'topic', or 'FurComs/#{topic}/Send/#'
-			# using the /dev/DEVICE part of the port argument if topic is left nil.
+			# It will additionally subscribe to the MQTT 'topic',
+			# or 'FurComs/#{topic}/Send/#' using the /dev/DEVICE part of the port
+			# argument if topic is left nil.
 			# Any message received on this topic will be sent as FurComs messages.
 			#
 			# Received messages are first handed out to internal callbacks,
@@ -37,13 +38,13 @@ module TEF
 				@mqtt = mqtt;
 				@mqtt_topic = topic || "FurComs/#{port.sub('/dev/', '')}/";
 
-				@mqtt.subscribe_to @mqtt_topic + 'Send/#' do |data, topic|
-					topic = topic.join('/')
+				@mqtt.subscribe_to @mqtt_topic + 'Send/#' do |data, msg_topic|
+					msg_topic = msg_topic.join('/')
 
-					next if data.length + topic.length > 250
-					next unless topic =~ /^[\w\s\/]*$/
+					next if data.length + msg_topic.length > 250
+					next unless msg_topic =~ /^[\w\s\/]*$/
 
-					self.send_message topic, data
+					send_message msg_topic, data
 				end
 			end
 

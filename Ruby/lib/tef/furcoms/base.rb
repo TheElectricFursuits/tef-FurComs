@@ -59,7 +59,7 @@ module TEF
 
 				@message_procs.each do |callback|
 					begin
-						if filter = callback[:topic]
+						if (filter = callback[:topic])
 							if filter.is_a? String
 								next unless topic == filter
 							elsif filter.is_a? RegExp

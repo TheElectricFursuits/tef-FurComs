@@ -1,5 +1,5 @@
 
-require_relative 'Base.rb'
+require_relative 'base.rb'
 
 require 'xasin_logger'
 
@@ -32,11 +32,11 @@ module TEF
 				@mqtt = mqtt;
 				@mqtt_topic = topic;
 
-				@mqtt.subscribe_to topic + 'Received/#' do |data, topic|
-					topic = topic.join('/')
-					next unless topic =~ /^[\w\s\/]*$/
+				@mqtt.subscribe_to topic + 'Received/#' do |data, msg_topic|
+					msg_topic = msg_topic.join('/')
+					next unless msg_topic =~ /^[\w\s\/]*$/
 
-					handout_data(topic, data);
+					handout_data(msg_topic, data);
 				end
 
 				init_x_log(@mqtt_topic)
@@ -45,10 +45,10 @@ module TEF
 			# (see Base#send_message)
 			def send_message(topic, data, priority: 0, chip_id: 0)
 				unless topic =~ /^[\w\s\/]*$/
-					raise ArgumentError, "Topic includes invalid characters!"
+					raise ArgumentError, 'Topic includes invalid characters!'
 				end
 				if (topic.length + data.length) > 250
-					raise ArgumentError, "Message packet length exceeded!"
+					raise ArgumentError, 'Message packet length exceeded!'
 				end
 
 				x_logd("Sending '#{topic}': '#{data}'")

@@ -1,3 +1,3 @@
 
-require_relative 'furcoms/SerialToMQTT.rb'
-require_relative 'furcoms/MQTT.rb'
+require_relative 'furcoms/serial_to_mqtt.rb'
+require_relative 'furcoms/mqtt.rb'
